@@ -1,5 +1,12 @@
 # RAG-AI-Agent
+## Screenshots
 
+
+![RAG-AI-Agent](ImagesForReadme/raf_dark_page-0001.jpg)
+
+![RAG-AI-Agent](ImagesForReadme/rag_cv_page-0001.jpg)
+
+![Insulino screenshot](ImagesForReadme/dr%20insulino_page-0001.jpg)
 A Streamlit application for building named “experts” from your PDFs: each expert is backed by a local ChromaDB collection, retrieval-augmented generation (RAG), and an optional LangChain tool-calling agent (PubMed, Tavily web search, and clinical calculators).
 
 The goal is grounded answers tied to uploaded material, with citations to filename and page, plus external tools when **agent mode** is enabled.
