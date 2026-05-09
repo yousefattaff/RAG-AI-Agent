@@ -182,10 +182,8 @@ RAG-AI-Agent/
 ## Limitations
 
 - Groq free tier throughput is finite; bursts may trigger API errors depending on account limits.
-- First embedding run downloads the Sentence Transformer model (~tens of MB) and CPU ingest can be slow on large PDFs.
 - Tavily and Edge TTS require internet access; embeddings and Chroma are local.
 - PDFs that are image-only scans need an OCR ingestion path (see roadmap); current loader reads embedded text only.
-- eGFR tool uses a simplified CKD-EPI style workflow documented in code (“males” path in comments); clinical use demands validation and fuller inputs.
 
 ---
 
@@ -193,9 +191,7 @@ RAG-AI-Agent/
 
 - OCR or vision pipeline for scanned PDFs
 - Streaming token responses in the UI
-- Richer multimodal PDF handling
-- Export conversations (e.g. PDF report)
-- Streamlit Cloud or container deployment notes
+And i am open to any new ideas :)
 
 ---
 
@@ -208,4 +204,3 @@ Update the placeholders with your profiles when publishing:
 - GitHub: `https://github.com/yourusername`
 - LinkedIn: `https://linkedin.com/in/yourusername`
 
-Add a root `LICENSE` file if you distribute the project publicly; none is bundled in-tree by default.
