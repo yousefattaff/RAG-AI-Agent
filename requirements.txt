@@ -1,0 +1,39 @@
+# requirements.txt
+
+# There are multiple options like LiteLLM or similar packages, but i am using this one for simplicity.
+# ── LangChain core ──────────────────────────────────────────
+langchain                  # The main framework
+langchain-core             # Base abstractions (messages, runnables)
+langchain-community        # Community integrations (Chroma, HuggingFace)
+langchain-text-splitters   # Text splitter implementations used by LangChain v1+
+langchain-groq             # Groq LLM integration
+langchain-ollama           # Ollama LLM integration
+
+# ── Vector store ─────────────────────────────────────────────
+chromadb                   # Local vector database
+
+# ── Embeddings (local, no API key needed) ────────────────────
+sentence-transformers      # HuggingFace embeddings, runs on your machine
+
+# ── Document loading ─────────────────────────────────────────
+pypdf                      # Read PDF files
+pytesseract                # Python wrapper for Tesseract OCR engine
+Pillow                     # Image processing (needed by pytesseract)
+easyocr                    # Easier OCR alternative (we'll use both)
+
+# ── Tools for the agent ──────────────────────────────────────
+biopython                  # PubMed/Entrez API access
+requests                   # HTTP calls
+duckduckgo-search          # Free web search (no API key)
+
+# ── TTS ──────────────────────────────────────────────────────
+gtts                       # Google TTS (free)
+pygame                     # Playing audio
+
+# ── Config & utilities ───────────────────────────────────────
+python-dotenv              # Load .env into environment variables
+pydantic                   # Data validation and settings management
+pydantic-settings          # Pydantic v2 settings management
+
+# ── UI (Phase 5, install now to avoid surprises later) ───────
+streamlit                  # Web UI

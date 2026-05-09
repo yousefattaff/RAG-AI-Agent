@@ -1,0 +1,33 @@
+[project]
+name = "rag-ai-agent"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "biopython>=1.87",
+    "chromadb>=1.5.8",
+    "duckduckgo-search>=8.1.1",
+    "easyocr>=1.7.2",
+    "gtts>=2.5.4",
+    "langchain>=0.3.0",
+    "langchain-community>=0.3.0",
+    "langchain-core>=0.3.0",
+    "langchain-text-splitters>=1.0.0",
+    "langchain-groq>=0.2.0",
+    "langchain-ollama>=1.1.0",
+    "pillow>=12.2.0",
+    "pydantic>=2.13.3",
+    "pydantic-settings>=2.14.0",
+    "pygame>=2.6.1",
+    "pypdf>=6.10.2",
+    "pytesseract>=0.3.13",
+    "python-dotenv>=1.2.2",
+    "requests>=2.33.1",
+    "sentence-transformers>=5.4.1",
+    "streamlit>=1.56.0",
+    "ddgs>=9.14.2",
+    "tavily-python>=0.7.24",
+    "edge-tts>=7.2.8",
+    "tornado>=6.5.5",
+]

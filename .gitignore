@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+wheels/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Environment & secrets — never commit
+.env
+.env.*
+!.env.example
+
+# Jupyter / tooling
+.ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE / editor
+.idea/
+.vscode/
+
+# Streamlit — may contain secrets
+.streamlit/secrets.toml
+
+# Local databases & vector store (machine-specific / large)
+vectorstore/
+
+# User uploads & generated artifacts
+data/papers/
+data/**/*.mp3
+
+# Torch / HF cache (sometimes created under project when misconfigured)
+.cache/
