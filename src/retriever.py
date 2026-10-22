@@ -96,15 +96,31 @@ def format_docs(docs: list[Document]) -> str:
     return "\n\n---\n\n".join(formatted)
 
 
+# ─── Build the retriever ──────────────────────────────────────────────────────
+def get_retriever(collection_name: str = "medmind"):
+    """
+    Builds the retriever for a collection. Shared by the document-only RAG
+    chain and the agent so retrieval settings stay consistent in both paths.
+
+    Homogeneous results come from Maximal Marginal Relevance: MMR fetches a
+    wider candidate pool (fetch_k) and then re-ranks it, balancing relevance
+    against diversity. That prevents three near-identical chunks from
+    occupying every k slot when the collection contains a lot of redundancy.
+    """
+    vectorstore = load_vectorstore(collection_name)
+    return vectorstore.as_retriever(
+        search_type="mmr",
+        search_kwargs={
+            "k": settings.retrieval_top_k,
+            "fetch_k": max(settings.retrieval_top_k * 4, 20),
+        },
+    )
+
+
 # ─── Build the RAG chain ──────────────────────────────────────────────────────
 def build_rag_chain(collection_name: str = "medmind", domain: str = "medical research"):
-    
-    vectorstore = load_vectorstore(collection_name)
-    
-    retriever = vectorstore.as_retriever(
-        search_type="similarity",
-        search_kwargs={"k": settings.retrieval_top_k},
-    )
+
+    retriever = get_retriever(collection_name)
 
     # Now uses the dynamic prompt instead of the hardcoded one
     prompt = build_rag_prompt(domain)
@@ -122,30 +138,40 @@ def build_rag_chain(collection_name: str = "medmind", domain: str = "medical res
     return rag_chain
 
 
+def _answer_chain(domain: str):
+    """
+    Prompt + LLM + parser only. Used by ask_with_sources when the retrieved
+    documents are already in hand, so retrieval happens exactly once.
+    """
+    return build_rag_prompt(domain) | get_groq_llm() | StrOutputParser()
+
+
 # ─── Retriever with sources ───────────────────────────────────────────────────
 def ask_with_sources(
     question: str,
     collection_name: str = "medmind",
     domain: str = "medical research"
 ) -> dict:
-    
-    vectorstore = load_vectorstore(collection_name)
-    retriever = vectorstore.as_retriever(
-        search_type="similarity",
-        search_kwargs={"k": settings.retrieval_top_k},
+
+    retriever = get_retriever(collection_name)
+    source_docs = retriever.invoke(question)
+
+    # Nothing usable retrieved → answer without spending an LLM call.
+    # The canned response matches the fallback the prompt requires.
+    if not source_docs:
+        return {"answer": "I couldn't find this in the provided documents.", "sources": []}
+
+    answer = _answer_chain(domain).invoke(
+        {"context": format_docs(source_docs), "question": question}
     )
 
-    source_docs = retriever.invoke(question)
-    chain = build_rag_chain(collection_name, domain)  # pass domain through
-    answer = chain.invoke(question)
-
-    sources = []
-    for doc in source_docs:
-        from pathlib import Path
-        sources.append({
+    sources = [
+        {
             "filename": Path(doc.metadata.get("source", "unknown")).name,
             "page": doc.metadata.get("page", "?"),
-            "excerpt": doc.page_content[:200] + "...",
-        })
+            "excerpt": doc.page_content[:200] + ("..." if len(doc.page_content) > 200 else ""),
+        }
+        for doc in source_docs
+    ]
 
     return {"answer": answer, "sources": sources}

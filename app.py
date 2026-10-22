@@ -9,6 +9,7 @@ import time
 
 from src.ingestion import ingest_pdf, list_collections, delete_collection
 from src.retriever import ask_with_sources
+import src.agent as src_agent
 from src.agent import ask_agent
 from src.tts import text_to_speech_bytes, autoplay_audio_html, VOICES
 from config import PAPERS_DIR
@@ -166,11 +167,18 @@ with st.sidebar:
             )
             st.session_state.selected_voice = VOICES[selected_voice_key]
 
-        st.session_state.use_agent = st.toggle(
-            "Agentic mode",
-            value=st.session_state.use_agent,
-            help="ON: uses tools (PubMed, web, calculator). OFF: documents only",
-        )
+        if src_agent.TOOLS_AVAILABLE:
+            st.session_state.use_agent = st.toggle(
+                "Agentic mode",
+                value=st.session_state.use_agent,
+                help="ON: uses tools (PubMed, web, calculator). OFF: documents only",
+            )
+        else:
+            st.session_state.use_agent = False
+            st.caption(
+                "Agentic mode unavailable: src/tools.py is not present "
+                "in this checkout. Document-only RAG is used."
+            )
 
         if st.button("Clear chat"):
             st.session_state.messages = []

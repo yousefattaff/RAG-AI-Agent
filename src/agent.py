@@ -2,13 +2,23 @@
 
 from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 from src.llm import get_groq_llm
-from src.tools import STATIC_TOOLS
-from src.ingestion import load_vectorstore
-from src.retriever import format_docs
+from src.retriever import get_retriever, format_docs
 from config import settings
 import logging
 
 logger = logging.getLogger(__name__)
+
+# STATIC_TOOLS (pubmed_search, web_search, medical_calculator) lives in
+# src/tools.py. It is optional: without it the agent falls back to
+# document-only answering instead of crashing the whole app at import time.
+try:
+    from src.tools import STATIC_TOOLS
+    TOOLS_AVAILABLE = True
+except ImportError as e:
+    STATIC_TOOLS = []
+    TOOLS_AVAILABLE = False
+    logger.warning(f"Optional agent tools unavailable ({e}) — "
+                   f"agent mode will answer from documents only")
 
 
 def retrieve_context(question: str, collection_name: str) -> str:
@@ -19,11 +29,7 @@ def retrieve_context(question: str, collection_name: str) -> str:
     the LLM reads them directly without needing to call a tool.
     """
     try:
-        vectorstore = load_vectorstore(collection_name)
-        retriever = vectorstore.as_retriever(
-            search_type="similarity",
-            search_kwargs={"k": settings.retrieval_top_k},
-        )
+        retriever = get_retriever(collection_name)
         docs = retriever.invoke(question)
 
         if not docs:
@@ -78,8 +84,11 @@ def ask_agent(
         tool_map = {tool.name: tool for tool in tools}
 
         # ── Step 3: Build LLM with tools bound ────────────────────────────────
+        # With no tools available the loop below still terminates at the
+        # first response without tool_calls, so this stays a working
+        # document-only fallback.
         llm = get_groq_llm(temperature=0.0)
-        llm_with_tools = llm.bind_tools(tools)
+        llm_with_tools = llm.bind_tools(tools) if tools else llm
 
         # ── Step 4: Build messages with context already in system prompt ───────
         messages = [
