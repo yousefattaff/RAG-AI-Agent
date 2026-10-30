@@ -37,7 +37,11 @@ class Settings(BaseSettings):
 
     embedding_model: str = "all-MiniLM-L6-v2"
 
-    retrieval_top_k: int = 3
+    retrieval_top_k: int = 4
+    retrieval_candidate_k: int = 12
+    retrieval_fetch_k: int = 24
+    context_neighbors: int = 1
+    relevance_threshold: float = 0.35
 
     chunk_size: int = 1000
     chunk_overlap: int = 200

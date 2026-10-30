@@ -30,4 +30,10 @@ dependencies = [
     "tavily-python>=0.7.24",
     "edge-tts>=7.2.8",
     "tornado>=6.5.5",
+    "rank-bm25>=0.2.2",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
 ]

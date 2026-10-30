@@ -19,6 +19,7 @@ from langchain_core.documents import Document
 # Our LLM factory and vectorstore loader
 from src.llm import get_groq_llm
 from src.ingestion import load_vectorstore
+from src.rag_pipeline import retrieve_advanced
 
 import logging
 logger = logging.getLogger(__name__)
@@ -87,9 +88,11 @@ def format_docs(docs: list[Document]) -> str:
         # Clean up the source path — we only want the filename, not the full path
         # Path(source).name turns "/home/user/data/papers/study.pdf" → "study.pdf"
         filename = Path(source).name
+        score = doc.metadata.get("rerank_score")
+        score_bit = f" | Score: {score:.3f}" if isinstance(score, (int, float)) else ""
 
         formatted.append(
-            f"[Source: {filename} | Page: {page}]\n{doc.page_content}"
+            f"[Source: {filename} | Page: {page}{score_bit}]\n{doc.page_content}"
         )
 
     # Join all chunks with a clear separator so the LLM can distinguish them
@@ -99,20 +102,16 @@ def format_docs(docs: list[Document]) -> str:
 # ─── Build the retriever ──────────────────────────────────────────────────────
 def get_retriever(collection_name: str = "medmind"):
     """
-    Builds the retriever for a collection. Shared by the document-only RAG
-    chain and the agent so retrieval settings stay consistent in both paths.
-
-    Homogeneous results come from Maximal Marginal Relevance: MMR fetches a
-    wider candidate pool (fetch_k) and then re-ranks it, balancing relevance
-    against diversity. That prevents three near-identical chunks from
-    occupying every k slot when the collection contains a lot of redundancy.
+    Baseline MMR retriever. The live ask path uses retrieve_advanced()
+    (fusion + rerank + query transforms). This remains for chains that
+    still expect a LangChain retriever object.
     """
     vectorstore = load_vectorstore(collection_name)
     return vectorstore.as_retriever(
         search_type="mmr",
         search_kwargs={
             "k": settings.retrieval_top_k,
-            "fetch_k": max(settings.retrieval_top_k * 4, 20),
+            "fetch_k": max(settings.retrieval_fetch_k, settings.retrieval_top_k * 4),
         },
     )
 
@@ -150,11 +149,13 @@ def _answer_chain(domain: str):
 def ask_with_sources(
     question: str,
     collection_name: str = "medmind",
-    domain: str = "medical research"
+    domain: str = "medical research",
+    history: list[dict] | None = None,
 ) -> dict:
 
-    retriever = get_retriever(collection_name)
-    source_docs = retriever.invoke(question)
+    source_docs = retrieve_advanced(
+        question, collection_name, history=history,
+    )
 
     # Nothing usable retrieved → answer without spending an LLM call.
     # The canned response matches the fallback the prompt requires.
@@ -170,6 +171,7 @@ def ask_with_sources(
             "filename": Path(doc.metadata.get("source", "unknown")).name,
             "page": doc.metadata.get("page", "?"),
             "excerpt": doc.page_content[:200] + ("..." if len(doc.page_content) > 200 else ""),
+            "score": doc.metadata.get("rerank_score"),
         }
         for doc in source_docs
     ]

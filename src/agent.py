@@ -2,7 +2,8 @@
 
 from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 from src.llm import get_groq_llm
-from src.retriever import get_retriever, format_docs
+from src.retriever import format_docs
+from src.rag_pipeline import retrieve_advanced
 from config import settings
 import logging
 
@@ -21,7 +22,11 @@ except ImportError as e:
                    f"agent mode will answer from documents only")
 
 
-def retrieve_context(question: str, collection_name: str) -> str:
+def retrieve_context(
+    question: str,
+    collection_name: str,
+    history: list[dict] | None = None,
+) -> str:
     """
     Retrieves relevant document chunks BEFORE the agent runs.
     This replaces the search_documents tool entirely.
@@ -29,8 +34,7 @@ def retrieve_context(question: str, collection_name: str) -> str:
     the LLM reads them directly without needing to call a tool.
     """
     try:
-        retriever = get_retriever(collection_name)
-        docs = retriever.invoke(question)
+        docs = retrieve_advanced(question, collection_name, history=history)
 
         if not docs:
             return "No relevant information found in the uploaded documents."
@@ -68,6 +72,7 @@ def ask_agent(
     question: str,
     collection_name: str = "medmind",
     domain: str = "general research",
+    history: list[dict] | None = None,
 ) -> dict:
     try:
         # ── Step 1: Retrieve context BEFORE agent starts ───────────────────────
@@ -75,7 +80,7 @@ def ask_agent(
         # The LLM reads them as part of its context — no tool call needed
         # This completely eliminates the <function=search_documents> error
         logger.info("Retrieving document context...")
-        context = retrieve_context(question, collection_name)
+        context = retrieve_context(question, collection_name, history=history)
 
         # ── Step 2: Only external tools (no search_documents) ─────────────────
         # STATIC_TOOLS = pubmed_search, web_search, medical_calculator

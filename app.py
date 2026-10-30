@@ -217,8 +217,13 @@ else:
             if message.get("sources"):
                 with st.expander("Sources", expanded=False):
                     for source in message["sources"]:
+                        score = source.get("score")
+                        score_label = (
+                            f" · rerank {score:.3f}"
+                            if isinstance(score, (int, float)) else ""
+                        )
                         st.caption(
-                            f"📄 **{source['filename']}** — Page {source['page']}"
+                            f"📄 **{source['filename']}** — Page {source['page']}{score_label}"
                         )
                         st.caption(f"> {source['excerpt']}")
 
@@ -244,6 +249,7 @@ else:
                         question=prompt,
                         collection_name=st.session_state.collection_name,
                         domain=st.session_state.domain,
+                        history=st.session_state.messages,
                     )
 
                     if result.get("error") or not result.get("answer"):
@@ -260,6 +266,7 @@ else:
                             question=prompt,
                             collection_name=st.session_state.collection_name,
                             domain=st.session_state.domain,
+                            history=st.session_state.messages,
                         )
                         answer = result["answer"]
                         sources = result["sources"]
@@ -277,7 +284,12 @@ else:
             if sources:
                 with st.expander("Sources", expanded=False):
                     for s in sources:
-                        st.caption(f"📄 **{s['filename']}** — Page {s['page']}")
+                        score = s.get("score")
+                        score_label = (
+                            f" · rerank {score:.3f}"
+                            if isinstance(score, (int, float)) else ""
+                        )
+                        st.caption(f"📄 **{s['filename']}** — Page {s['page']}{score_label}")
                         st.caption(f"> {s['excerpt']}")
 
             # TTS autoplay

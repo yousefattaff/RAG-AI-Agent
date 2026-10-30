@@ -12,6 +12,7 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 
 from config import settings, VECTORSTORE_DIR
+from src.rag_utils import add_contextual_header
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -101,10 +102,15 @@ def chunk_documents(documents: list) -> list:
     # Tag each chunk with its position within its page so later quality
     # upgrades (metadata-aware retrieval, finer citations) have data to use.
     per_page: dict = {}
-    for chunk in chunks:
+    for seq_index, chunk in enumerate(chunks):
         key = (chunk.metadata.get("source"), chunk.metadata.get("page"))
         per_page[key] = per_page.get(key, -1) + 1
         chunk.metadata["chunk_index"] = per_page[key]
+        chunk.metadata["seq_index"] = seq_index
+        filename = Path(str(chunk.metadata.get("source", "unknown"))).name
+        chunk.metadata["filename"] = filename
+        headed = add_contextual_header(chunk)
+        chunk.page_content = headed.page_content
 
     logger.info(f"Split into {len(chunks)} chunks")
     return chunks
@@ -151,6 +157,13 @@ def embed_and_store(chunks: list, collection_name: str = "medmind") -> Chroma:
     if ids:
         vectorstore.delete(ids=ids)
     vectorstore.add_documents(documents=chunks, ids=ids)
+
+    load_vectorstore.cache_clear()
+    try:
+        from src.rag_pipeline import clear_retrieval_caches
+        clear_retrieval_caches()
+    except Exception:
+        pass
 
     logger.info(f"Stored {len(chunks)} chunks in ChromaDB at {VECTORSTORE_DIR}")
     return vectorstore
@@ -220,5 +233,10 @@ def delete_collection(collection_name: str) -> None:
 
     # The cached vectorstore points at the now-deleted collection.
     load_vectorstore.cache_clear()
+    try:
+        from src.rag_pipeline import clear_retrieval_caches
+        clear_retrieval_caches()
+    except Exception:
+        pass
     logger.info(f"Deleted collection: {collection_name}")
 
